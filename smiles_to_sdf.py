@@ -3,6 +3,8 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import os
 import subprocess
+from meeko import MoleculePreparation
+from meeko import PDBQTWriterLegacy
 import sys
 
 def parse():
@@ -26,13 +28,13 @@ def smiles_to_3D(smiles, mol_name):
     return molh
 
 def sdf_to_pdbqt(sdf_path,pdbqt_path):
-    """
-    Uses subprocess to call openbabel to convert an sdf file to a pdbqt file
-    Using subprocess cause babel wrappel is not working on macos.
-    """
-    subprocess.run(["obabel", "-isdf", sdf_path, "-opdbqt", "-O", pdbqt_path])
-    return pdbqt_path
-
+    for mol in Chem.SDMolSupplier(sdf_path,removeHs=False):
+        mk_prep = MoleculePreparation()
+        molsetup=mk_prep.prepare(mol)[0]
+        pdbqt_string = PDBQTWriterLegacy.write_string(molsetup)[0]
+        with open(pdbqt_path, "w") as f:
+            f.write(pdbqt_string)
+        return pdbqt_path
 if __name__ == "__main__":
     args = parse()
     print(args)
