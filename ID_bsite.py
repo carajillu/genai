@@ -41,7 +41,7 @@ def get_bsite_fromlig(traj, ligand_indices, cutoff):
     """
     ligand_name=traj.topology.atom(ligand_indices[0]).residue.name
     frame_neighbors = mdtraj.compute_neighbors(traj, cutoff, ligand_indices)
-    all_neighbors = [int(i) for i in np.concatenate(frame_neighbors, axis=0) if traj.topology.atom(i).residue.name!=ligand_name]
+    all_neighbors = [int(i) for i in np.concatenate(frame_neighbors, axis=0) if (traj.topology.atom(i).residue.name!=ligand_name and traj.topology.atom(i).element!=mdtraj.element.hydrogen)]
     all_neighbors = list(set(all_neighbors))
     return all_neighbors
 

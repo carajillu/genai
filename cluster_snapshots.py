@@ -9,6 +9,8 @@ from meeko import MoleculePreparation
 from meeko import PDBQTWriterLegacy
 import sys
 import subprocess
+import os
+
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("--top", type=str, nargs="?", help="System topology (gro or pdb)",required=True)
@@ -86,14 +88,16 @@ def generate_bsite_pdbqt(traj, bsite_indices, medoid_indices):
     uknwnrs=["NTH","CAR","NHI","CGL"]
     sel=[]
     for atom in traj.topology.atoms:
-        print(atom.residue.name)
+        #print(atom.residue.name)
         if atom.residue.name[0:3] not in uknwnrs:
             sel.append(atom.index)
     traj=traj.atom_slice(sel)
+    bsite_traj=traj.atom_slice(bsite_indices)
     for index in medoid_indices:
-        traj[index].save_pdb(f"receptor_{index}.pdb")
-        subprocess.run(["mk_prepare_receptor.py", "-i", f"receptor_{index}.pdb", "--write_pdbqt", f"receptor_{index}.pdbqt"])
-
+        os.makedirs(f"bsite_{index}", exist_ok=True)
+        traj[index].save_pdb(f"bsite_{index}/receptor_{index}.pdb")
+        #fixme: the following should be coded using meeko functions
+        subprocess.run(["mk_prepare_receptor.py", "-i", f"bsite_{index}/receptor_{index}.pdb", "--write_pdbqt", f"bsite_{index}/receptor_{index}.pdbqt"])
 def generate_vina_conf(traj, bsite_indices, medoid_indices):
     """
     for each medoid frame, find the maximum and minimum coordinates of the binding site
@@ -121,9 +125,9 @@ def generate_vina_conf(traj, bsite_indices, medoid_indices):
         min_coords = np.array([np.min(traj.xyz[:, :, 0]), np.min(traj.xyz[:, :, 1]), np.min(traj.xyz[:, :, 2])])*10
         center = (max_coords + min_coords) / 2
         size = (max_coords - center) * 1 # vina uses grid points, which are 1 angstrom apart
-        with open(f"vina_bsite_{index}.conf", "w") as f:
-            f.write(f"receptor=bsite_{index}.pdbqt\n")
-            f.write(f"ligand=ligand.pdbqt\n")
+        with open(f"bsite_{index}/vina_bsite_{index}.conf", "w") as f:
+            f.write(f"receptor=receptor_{index}.pdbqt\n")
+            #f.write(f"ligand=ligand.pdbqt\n")
             f.write(f"center_x={center[0]}\ncenter_y={center[1]}\ncenter_z={center[2]}\n")
             f.write(f"size_x={int(size[0])}\nsize_y={int(size[1])}\nsize_z={int(size[2])}\n")
             f.write(f"num_modes=100\n")
