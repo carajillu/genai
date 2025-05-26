@@ -44,6 +44,7 @@ def main():
 
     contacts=pd.DataFrame()
     contacts["Time_ps"]=np.arange(len(sasa_1)) * args.timestep
+    contacts["Total_Surface_Area_nm2"]=np.zeros(len(sasa_1))
     
     for selection in args.selection_2:
         print(f"Selecting atoms for {selection} ...")
@@ -56,6 +57,7 @@ def main():
         sasa_combined = compute_sasa(traj, np.concatenate([atoms_1, atoms_2]))
         contact_surface = (sasa_1 + sasa_2) - sasa_combined
         contacts[selection.replace(" ","_")]=contact_surface
+        contacts["Total_Surface_Area_nm2"]+=contact_surface
 
     print(f"Writing results to {args.output}...")
     contacts.to_csv(args.output, index=False)
