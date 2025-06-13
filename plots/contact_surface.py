@@ -51,3 +51,8 @@ fig.text(0.04, 0.5, 'Contact Surface Area ($\AA^2$)', ha='center', va='center', 
 
 plt.subplots_adjust(wspace=0.1, hspace=0.1)
 plt.show()
+
+a0_path = "contact_surface.png"
+fig.savefig(a0_path, dpi=300, bbox_inches='tight')
+
+plt.close(fig)
