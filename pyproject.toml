@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dockflow"
+version = "0.1.0"
+description = "Workflow to prepare ligands, dock with Vina, and compute contact surface areas"
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+dependencies = [
+    "rdkit",
+    "meeko",
+    # "openbabel",
+    "pandas",
+    "numpy",
+    "mdtraj",
+]
+
+[project.scripts]
+dockflow = "dockflow.cli:main"

@@ -1,0 +1,17 @@
+name: dockflow-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytest
+  - ipython
+  - rdkit
+  # - meeko # we get it from pip, since the one from conda doesn't pass tests
+  - openbabel
+  - pandas
+  - numpy
+  - mdtraj
+  - mdanalysis
+  - pip
+  - pip:
+      - -e .
