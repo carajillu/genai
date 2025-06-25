@@ -6,6 +6,7 @@ from dockflow.dock.prepare.receptors import gen_binding_site_pdb, gen_receptor_p
 from dockflow.dock.vina import gen_vina_config, dock
 from dockflow.analyze.contact import pdbqt_to_mdtraj_trajectory, compute_contact_surface_area_single_pose
 from dockflow.analyze.vina_scores import scores_from_pdbqt
+from dockflow.analyze.rmsd import compute_rmsds_against_ref
 import os
 
 def parse_args():
@@ -46,16 +47,10 @@ def main():
         dock(vina_exec="vina",receptor_pdbqt="../receptor.pdbqt",ligand_pdbqt=f"{name}.pdbqt",config="vina_config.txt")
         #analysis
         csa=[]
-        rmsd=[]
         poses_mdtraj=pdbqt_to_mdtraj_trajectory(pdbqt_path="vina_out.pdbqt")
         for frame in poses_mdtraj:
             csa_frame=compute_contact_surface_area_single_pose(bsite_traj=binding_site,ligand_traj=frame)
             csa.append(csa_frame)
-            if ref_ligand is not None:
-                frame_heavy=frame.atom_slice(frame.topology.select("not element H"))
-                ref_heavy=ref_ligand.atom_slice(ref_ligand.topology.select("not element H"))
-                rmsd_frame=mdtraj.rmsd(ref_heavy, frame_heavy)
-                rmsd.append(rmsd_frame)
         scores=scores_from_pdbqt("vina_out.pdbqt")
         results=pd.DataFrame()
         results["name"]=[name]*len(scores)
@@ -64,6 +59,7 @@ def main():
         results["vina_score"]=scores
         results["CSA"]=csa
         if ref_ligand is not None:
+            rmsd=compute_rmsds_against_ref(pdb_path=f"{root_dir}/{args.ref_ligand}",pdbqt_path="vina_out.pdbqt")
             results["rmsd"]=rmsd
         results.to_csv(f"{name}.csv",index=False)
         os.chdir(root_dir)
