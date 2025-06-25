@@ -8,6 +8,7 @@ from dockflow.analyze.contact import pdbqt_to_mdtraj_trajectory, compute_contact
 from dockflow.analyze.vina_scores import scores_from_pdbqt
 from dockflow.analyze.rmsd import compute_rmsds_against_ref
 import os
+import sys
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run docking")
@@ -34,6 +35,30 @@ def main():
         ref_ligand=None
     binding_site=gen_binding_site_pdb(receptor, args.bsite_selection)
     gen_receptor_pdbqt(args.receptor, "binding_site.pdb", "receptor")
+
+    if args.ref_ligand is not None:
+        os.makedirs("ref_ligand", exist_ok=True)
+        os.chdir("ref_ligand")
+        gen_vina_config(box_filename="../receptor.box.txt",out_path="vina_config.txt")
+        cmd=f"mk_prepare_ligand.py -i {root_dir}/{args.ref_ligand} -o ref_ligand.pdbqt"
+        os.system(cmd)
+        dock(vina_exec="vina",receptor_pdbqt="../receptor.pdbqt",ligand_pdbqt=f"ref_ligand.pdbqt",config="vina_config.txt")
+        csa=[]
+        poses_mdtraj=pdbqt_to_mdtraj_trajectory(pdbqt_path="vina_out.pdbqt")
+        for frame in poses_mdtraj:
+            csa_frame=compute_contact_surface_area_single_pose(bsite_traj=binding_site,ligand_traj=frame)
+            csa.append(csa_frame)
+        scores=scores_from_pdbqt("vina_out.pdbqt")
+        results=pd.DataFrame()
+        results["ref_ligand"]=[args.ref_ligand]*len(scores)
+        results["vina_rank"]=range(len(scores))
+        results["vina_score"]=scores
+        results["CSA"]=csa
+        rmsd=compute_rmsds_against_ref(ref_pdbqt_path=f"ref_ligand.pdbqt",out_pdbqt_path="vina_out.pdbqt")
+        results["rmsd"]=rmsd
+        results.to_csv(f"ref_ligand.csv",index=False)
+        os.chdir(root_dir)
+    sys.exit()
 
     for index, row in library.iterrows():
         #prep
