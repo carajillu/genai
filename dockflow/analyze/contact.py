@@ -43,7 +43,7 @@ def pdbqt_to_mdtraj_trajectory(pdbqt_path: str = "vina_out.pdbqt"):
                 atom_name = line[12:16].strip()
                 atom_names.append(atom_name)
                 elements.append(atom_name)
-    print(elements)
+    #print(elements)
     if not poses:
         raise ValueError("No poses found in PDBQT file.")
     
