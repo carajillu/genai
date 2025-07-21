@@ -20,8 +20,22 @@ def gen_vina_config(box_filename: str = "receptor.box.txt", out_path: str = "vin
         f.write(f"energy_range = 99999.0\n")
     return
 
-def dock(vina_exec: str="vina", receptor_pdbqt:str = "receptor.pdbqt", ligand_pdbqt: str = "ligand.pdbqt", config="vina_config.txt"):
+def dock(vina_exec: str="vina", receptor_pdbqt:str = "receptor.pdbqt", ligand_pdbqt: str = "ligand.pdbqt", config="vina_config.txt", **kwargs):
+    """
+    Run Vina docking with the specified parameters.
+    """
     cmd=f"{vina_exec} --receptor {receptor_pdbqt} --ligand {ligand_pdbqt} --config {config}"
+    if kwargs:
+        for key, value in kwargs.items():
+            cmd += f" --{key} {value}"
     print(cmd)
     os.system(cmd)
     #subprocess.run(cmd.split(), shell=True)
+
+def batch_dock(vina_exec: str="vina", receptor_pdbqt:str = "receptor.pdbqt", ligand_directory: str = "ligands/", config="vina_config.txt", **kwargs):
+    cmd=f"{vina_exec} --receptor {receptor_pdbqt} --ligand_directory {ligand_directory} --config {config}"
+    if kwargs:
+        for key, value in kwargs.items():
+            cmd += f" --{key} {value}"
+    print(cmd)
+    os.system(cmd)

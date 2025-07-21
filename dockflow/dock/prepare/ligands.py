@@ -1,3 +1,4 @@
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import mdtraj as md
@@ -5,6 +6,7 @@ import numpy as np
 from meeko.preparation import MoleculePreparation
 from meeko import PDBQTWriterLegacy
 import os
+import subprocess
 
 def smiles_to_mdtraj(smiles: str, name: str = "ligand") -> md.Trajectory:
     """
@@ -69,7 +71,7 @@ def smiles_to_pdbqt(smiles: str, output_path: str, name: str = "ligand"):
 
     if AllChem.EmbedMolecule(mol, AllChem.ETKDG()) != 0:
         raise ValueError(f"Could not embed 3D structure for: {smiles}")
-    AllChem.UFFOptimizeMolecule(mol)
+    AllChem.UFFOptimizeMoleculeConfs(mol) # seems to optimize better than UFFOptimizeMolecule
 
     mol.SetProp("_Name", name)
 
@@ -112,3 +114,59 @@ def sdf_to_pdbqt(sdf_path, pdbqt_path=None):
         f.write(pdbqt_string)
 
     return pdbqt_path
+
+def prepare_library_from_smiles(smiles_file: str, output_dir: str = "pdbqt_library"):
+    """
+    Prepare a library of ligands from a SMILES file and save them as PDBQT files.
+    The library needs to be formatted as a csv file where the separators are commas 
+    and the smiles column is named either 'smiles' or 'SMILES'. 
+
+    Parameters
+    ----------
+    smiles_file : str
+        Path to the input SMILES file.
+    output_dir : str
+        Directory to save the output PDBQT files.
+
+    Returns
+    -------
+    str
+        Path to the directory containing the PDBQT files.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Read SMILES file
+    smiles_df = pd.read_csv(smiles_file)
+    assert 'smiles' in smiles_df.columns or 'SMILES' in smiles_df.columns, \
+        "SMILES file must contain a column named 'smiles' or 'SMILES'."
+    smiles_list = smiles_df['smiles'] if 'smiles' in smiles_df.columns else smiles_df['SMILES']
+
+    for i, smiles in enumerate(smiles_list):
+        smiles = smiles.strip()
+        if not smiles:
+            continue
+        output_path = os.path.join(output_dir, f"ligand_{i+1}.pdbqt")
+        smiles_to_pdbqt(smiles, output_path)
+
+    return os.path.abspath(output_dir)
+
+def pdbqt_to_mol2(pdbqt_path: str, output_path: str, explicit_H: bool = True):
+    """
+    Takes as input a multi-frame pdbqt file output by vina and:
+    - converts it to a temp.mol2 file to add bond orders
+    if explicit_H=True:
+    - converts the temp.mol2 file to a output mol2 file with explicit hydrogens
+
+    Returns
+    -------
+    str
+        Path to the generated MOL2 file.
+    """
+    cmd=f"obabel -ipdbqt {pdbqt_path} -omol2 -O {output_path}"
+    subprocess.run(cmd.split(), check=True)
+    if explicit_H:
+        os.rename(output_path, "temp.mol2")
+        cmd=f"obabel -imol2 temp.mol2 -omol2 {output_path} -h"
+        subprocess.run(cmd.split(), check=True)
+        os.remove("temp.mol2")
+    return output_path

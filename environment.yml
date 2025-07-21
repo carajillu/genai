@@ -12,6 +12,5 @@ dependencies:
   - numpy
   - mdtraj
   - mdanalysis
+  # - posebusters from pip
   - pip
-  - pip:
-      - -e .
