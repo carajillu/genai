@@ -150,23 +150,16 @@ def prepare_library_from_smiles(smiles_file: str, output_dir: str = "pdbqt_libra
 
     return os.path.abspath(output_dir)
 
-def pdbqt_to_mol2(pdbqt_path: str, output_path: str, explicit_H: bool = True):
+def pdbqt_to_sdf(pdbqt_path: str, output_path: str, explicit_H: bool = True):
     """
     Takes as input a multi-frame pdbqt file output by vina and:
-    - converts it to a temp.mol2 file to add bond orders
-    if explicit_H=True:
-    - converts the temp.mol2 file to a output mol2 file with explicit hydrogens
+    - converts it to a PDB file to add bond orders (with standard obabel command)
+    - converts the PDB file to an output sdf file (with explicit hydrogens if specified)
 
     Returns
     -------
     str
-        Path to the generated MOL2 file.
+        Path to the generated sdf file.
     """
-    cmd=f"obabel -ipdbqt {pdbqt_path} -omol2 -O {output_path}"
-    subprocess.run(cmd.split(), check=True)
-    if explicit_H:
-        os.rename(output_path, "temp.mol2")
-        cmd=f"obabel -imol2 temp.mol2 -omol2 {output_path} -h"
-        subprocess.run(cmd.split(), check=True)
-        os.remove("temp.mol2")
+   
     return output_path
