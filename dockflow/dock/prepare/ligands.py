@@ -115,7 +115,7 @@ def sdf_to_pdbqt(sdf_path, pdbqt_path=None):
 
     return pdbqt_path
 
-def prepare_library_from_smiles(smiles_file: str, output_dir: str = "pdbqt_library"):
+def prepare_library_from_smiles(smiles_list: list[str], output_dir: str = "pdbqt_library"):
     """
     Prepare a library of ligands from a SMILES file and save them as PDBQT files.
     The library needs to be formatted as a csv file where the separators are commas 
@@ -134,18 +134,12 @@ def prepare_library_from_smiles(smiles_file: str, output_dir: str = "pdbqt_libra
         Path to the directory containing the PDBQT files.
     """
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Read SMILES file
-    smiles_df = pd.read_csv(smiles_file)
-    assert 'smiles' in smiles_df.columns or 'SMILES' in smiles_df.columns, \
-        "SMILES file must contain a column named 'smiles' or 'SMILES'."
-    smiles_list = smiles_df['smiles'] if 'smiles' in smiles_df.columns else smiles_df['SMILES']
 
     for i, smiles in enumerate(smiles_list):
         smiles = smiles.strip()
         if not smiles:
             continue
-        output_path = os.path.join(output_dir, f"ligand_{i+1}.pdbqt")
+        output_path = os.path.join(output_dir, f"ligand_{i}.pdbqt")
         smiles_to_pdbqt(smiles, output_path)
 
     return os.path.abspath(output_dir)
