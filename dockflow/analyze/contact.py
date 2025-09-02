@@ -143,7 +143,7 @@ def compute_vina_out_csa(receptor: str="receptor.pdb", receptor_name: str=None, 
            csa_list.append(compute_contact_surface_area_single_pose(receptor_trj,ligand_trj))
         except Exception as e:
             print(f"WARNING for ligand {ligand_str}: {e}")
-            csa_list.append(0)
+            csa_list.append(np.nan)
     z=pd.DataFrame()
     z["ligand"]=ligand_list
     z[f"CSA_{receptor_name}"]=csa_list
