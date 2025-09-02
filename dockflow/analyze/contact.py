@@ -1,12 +1,7 @@
-import mdtraj as md
+import mdtraj
 import numpy as np
-
-import mdtraj as md
-import numpy as np
-
-import re
-import numpy as np
-import mdtraj as md
+import glob
+import pandas as pd
 
 
 def pdbqt_to_mdtraj_trajectory(pdbqt_path: str = "vina_out.pdbqt"):
@@ -17,7 +12,7 @@ def pdbqt_to_mdtraj_trajectory(pdbqt_path: str = "vina_out.pdbqt"):
     - pdbqt_path (str): Path to the multi-pose PDBQT file.
 
     Returns:
-    - md.Trajectory: MDTraj trajectory object (coordinates in nanometers).
+    - mdtraj.Trajectory: MDTraj trajectory object (coordinates in nanometers).
     """
     poses = []
     atom_names = []
@@ -51,13 +46,13 @@ def pdbqt_to_mdtraj_trajectory(pdbqt_path: str = "vina_out.pdbqt"):
     xyz = np.array(poses) / 10.0  # shape: (n_frames, n_atoms, 3)
 
     # Create MDTraj Topology
-    topology = md.Topology()
+    topology = mdtraj.Topology()
     chain = topology.add_chain()
     residue = topology.add_residue("LIG", chain)
     for name, element in zip(atom_names, elements):
-        topology.add_atom(name, md.element.get_by_symbol(element), residue)
+        topology.add_atom(name, mdtraj.element.get_by_symbol(element), residue)
 
-    return md.Trajectory(xyz=xyz, topology=topology)
+    return mdtraj.Trajectory(xyz=xyz, topology=topology)
 
 def merge_mdtraj_trajectories(traj1, traj2):
     """
@@ -65,11 +60,11 @@ def merge_mdtraj_trajectories(traj1, traj2):
     that contains all atoms from both.
 
     Parameters:
-    - traj1: md.Trajectory
-    - traj2: md.Trajectory
+    - traj1: mdtraj.Trajectory
+    - traj2: mdtraj.Trajectory
 
     Returns:
-    - md.Trajectory: merged trajectory
+    - mdtraj.Trajectory: merged trajectory
     """
     if len(traj1) != len(traj2):
         raise ValueError("Trajectories must have the same number of frames.")
@@ -78,7 +73,7 @@ def merge_mdtraj_trajectories(traj1, traj2):
     combined_xyz = np.concatenate([traj1.xyz, traj2.xyz], axis=1)  # shape: (n_frames, n_atoms1 + n_atoms2, 3)
 
     # Combine topologies
-    combined_topology = md.Topology()
+    combined_topology = mdtraj.Topology()
     chain1 = combined_topology.add_chain()
     for res in traj1.topology.residues:
         new_res = combined_topology.add_residue(res.name, chain1)
@@ -92,13 +87,13 @@ def merge_mdtraj_trajectories(traj1, traj2):
             combined_topology.add_atom(atom.name, atom.element, new_res)
 
     # Create new trajectory
-    merged_traj = md.Trajectory(xyz=combined_xyz, topology=combined_topology)
+    merged_traj = mdtraj.Trajectory(xyz=combined_xyz, topology=combined_topology)
 
     return merged_traj
 
 def compute_contact_surface_area_single_pose(
-    bsite_traj: md.Trajectory,
-    ligand_traj: md.Trajectory,
+    bsite_traj: mdtraj.Trajectory,
+    ligand_traj: mdtraj.Trajectory,
     probe_radius: float = 0.14,
     n_sphere_points: int = 960
 ) -> float:
@@ -107,9 +102,9 @@ def compute_contact_surface_area_single_pose(
 
     Parameters
     ----------
-    bsite_traj : md.Trajectory
+    bsite_traj : mdtraj.Trajectory
         MDTraj trajectory for the binding site (1 frame).
-    ligand_traj : md.Trajectory
+    ligand_traj : mdtraj.Trajectory
         MDTraj trajectory for the ligand (1 frame).
     probe_radius : float, optional
         Probe radius in nm for SASA calculation (default is 0.14).
@@ -127,13 +122,29 @@ def compute_contact_surface_area_single_pose(
     traj_combined = merge_mdtraj_trajectories(ligand_traj,bsite_traj)
 
     # Compute SASAs
-    sasa_ligand = md.shrake_rupley(ligand_traj, probe_radius=probe_radius,
+    sasa_ligand = mdtraj.shrake_rupley(ligand_traj, probe_radius=probe_radius,
                                    n_sphere_points=n_sphere_points, mode='atom').sum()
-    sasa_receptor = md.shrake_rupley(bsite_traj, probe_radius=probe_radius,
+    sasa_receptor = mdtraj.shrake_rupley(bsite_traj, probe_radius=probe_radius,
                                      n_sphere_points=n_sphere_points, mode='atom').sum()
-    sasa_combined = md.shrake_rupley(traj_combined, probe_radius=probe_radius,
+    sasa_combined = mdtraj.shrake_rupley(traj_combined, probe_radius=probe_radius,
                                      n_sphere_points=n_sphere_points, mode='atom').sum()
 
     csa = sasa_ligand + sasa_receptor - sasa_combined
     return float(csa)
 
+def compute_vina_out_csa(receptor: str="receptor.pdb", receptor_name: str=None, receptor_selection: str=None, ligand_list: list[str]=["ligand_out.pdbqt"], pose: int=0):
+    if receptor_name is None:
+       receptor_name = receptor.split("/")[-1].split(".")[0]
+    receptor_trj=mdtraj.load(receptor)
+    csa_list=[]
+    for ligand_str in ligand_list:
+        try:
+           ligand_trj=pdbqt_to_mdtraj_trajectory(ligand_str)[pose]
+           csa_list.append(compute_contact_surface_area_single_pose(receptor_trj,ligand_trj))
+        except Exception as e:
+            print(f"WARNING for ligand {ligand_str}: {e}")
+            csa_list.append(0)
+    z=pd.DataFrame()
+    z["ligand"]=ligand_list
+    z[f"CSA_{receptor_name}"]=csa_list
+    return z

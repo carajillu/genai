@@ -6,8 +6,7 @@ dependencies:
   - pytest
   - ipython
   - rdkit
-  # - meeko # we get it from pip, since the one from conda doesn't pass tests
-  - openbabel
+  - meeko 
   - pandas
   - numpy
   - mdtraj
