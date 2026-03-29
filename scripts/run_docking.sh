@@ -1,0 +1,1 @@
+python ~/github/genai/dockflow/cli/run_vinaGPU.py --receptor_dir snapshots_pdb --library_smi filtered.csv --bsite_selection "resSeq 12 or resSeq 16 or resSeq 20 or resSeq 142 or resSeq 145 or resSeq 202"
