@@ -172,3 +172,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+paper/acs-acs-latex-template.bib
+paper/acs-latex-template.aux
+paper/acs-latex-template.bbl
+paper/acs-latex-template.bcf
+paper/acs-latex-template.blg
+paper/acs-latex-template.run.xml
+paper/acs-latex-template.synctex.gz
