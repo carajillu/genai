@@ -123,7 +123,7 @@ def kde_1d(
     spacing: float,
     buffer: float = 0,
     bandwidth: Optional[float] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute a 1D KDE for `data` and return (x, density) on a fixed grid.
 
@@ -295,7 +295,7 @@ def pretty_plot(df,key_x,label_x,key_y,label_y,label_series,n_mark=None,mark_lab
     plt.show()
     plt.close(fig)
     return
-
+"""
 filename="contacts_3.csv"
 rep_number=4
 rep=pd.read_csv(filename)
@@ -306,6 +306,7 @@ label_y="Contact Surface Area ($\AA^{2}$)"
 plot_label=f"Replicate {rep_number}"
 save_name=f"rep_{rep_number}"
 pretty_plot(df=rep,key_x="time_ns",label_x=label_x,key_y="csa_angstrom2",label_y=label_y,label_series=plot_label,n_mark=9,mark_label="Selected for docking",save_name=save_name)
+"""
 
 def compare_barplot(df, label_col="label", title="Comparison (holo vs apo)",
                     bar_width=0.5, save_name=None):
