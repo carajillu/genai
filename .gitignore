@@ -179,3 +179,5 @@ paper/acs-latex-template.bcf
 paper/acs-latex-template.blg
 paper/acs-latex-template.run.xml
 paper/acs-latex-template.synctex.gz
+paper/acs-latex-template.fdb_latexmk
+paper/acs-latex-template.fls
